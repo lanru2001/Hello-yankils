@@ -1,3 +1,3 @@
-<h1> Hello, Welcome to Simple DevOps Project !!   </h1>
-<h2> Deploying on a kubernetes using ansible for Valaxy Technologies </h2>
-<h2> Glad to see you here </h2>
+<h1> Welcome to my web page !!   </h1>
+<h2> My name is Temitope Azeez Olanrewaju </h2>
+<h2> I'm a DevOps Engineer with three years experience in software build and release </h2>
