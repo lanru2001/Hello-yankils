@@ -1,54 +1,55 @@
 pipeline{
-  agent any
-  environment {
-     PATH="/opt/maven/bin:$PATH"
-          }
-  stages {
-    stage("Git-checked"){
-      steps {
-                echo "checking out from Git repo"
-                git "https://github.com/lanru2001/my-intro-website-.git"
-              }  
+    agent any
+    environment {
+      PATH="/opt/maven/bin:$PATH"
+    }
+    stages {
+        stage("Git-checked"){
+            steps {
+              git credentialsId: 'a3006431-8358-4c71-ba3c-f311b3ff18a9', url: 'https://github.com/lanru2001/my-intro-website.git'
+           
+            }  
         }
 
-      stage("Maven Build") {
-        steps { 
+        stage("Maven Build") {
+            steps { 
                 echo "mvn clean package"
                 sh  "mv target/*.war target/webapp.war" 
 
-               } 
+            } 
         }
     
-     stage('Unit Test') {
-        steps {
-            // Run test cases with tag "UnitTest"
-           sh "mvn test -P unit-test"
-        }
-        post {
-           failure {
-             script {
-               error "Unit Test failed"
-             }
-           }
-     } 
-      
-      stage('SonarQube analysis') {
-        steps {
-            withSonarQubeEnv('SonarQube') {
-               sh "./gradlew sonarqube"
-               }
+        stage('Unit Test') {
+            steps {
+              // Run test cases with tag "UnitTest"
+              sh "mvn test -P unit-test"
             }
-      }
+        
+            post {
+                failure {
+                    script {
+                       error "Unit Test failed"
+                    }
+                }
+            } 
+        }    
       
-      stage("Quality gate") {
-          steps {
-             waitForQualityGate abortPipeline: true
-          }
-      }  
+        stage('SonarQube analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                   sh "./gradlew sonarqube"
+                }
+            }
+        }
       
-      stage('Approval') {
-            // no agent, so executors are not used up when waiting for approvals
-            agent none
+        stage("Quality gate") {
+            steps {
+                waitForQualityGate abortPipeline: true
+            }
+        }  
+      
+        stage('Approval') {
+          // no agent, so executors are not used up when waiting for approvals
             steps {
                 script {
                     def deploymentDelay = input id: 'Deploy', message: 'Deploy to staging?', submitter: 'azeez,admin', parameters: [choice(choices: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24'], description: 'Hours to delay deployment?', name: 'deploymentDelay')]
@@ -57,17 +58,17 @@ pipeline{
             }
         }      
      
-      stage("deploy-dev") {
-
-        steps {
-           sshagent(['user-name']) {
-             sh """
-                  scp -o StrictHostKeyChecking=no  webapp/target/webapp.war     ec2-user@3.135.28.9:/opt/tomcat/webapps/
-                  ssh ec2-user@3.135.28.9   /opt/tomcat/bin/shutdown.sh
-                  ssh ec2-user@3.135.28.9   /opt/tomcat/bin/startup.sh 
-                """                  
-           }
-      }  
-    }    
-    
-  
+        stage("deploy-dev") {
+            steps {
+                sshagent(['user-name']) {
+                sh """
+                   scp -o StrictHostKeyChecking=no  webapp/target/webapp.war     ec2-user@3.135.28.9:/opt/tomcat/webapps/
+                   ssh ec2-user@3.135.28.9   /opt/tomcat/bin/shutdown.sh
+                   ssh ec2-user@3.135.28.9   /opt/tomcat/bin/startup.sh 
+                   
+                   """                  
+                }
+            }  
+        } 
+    }        
+}   
