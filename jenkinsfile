@@ -1,0 +1,57 @@
+pipeline{
+  agent any
+  environment {
+     PATH="/opt/maven/bin:$PATH"
+          }
+  stages {
+    stage("Git-checked"){
+      steps {
+                echo "checking out from Git repo"
+                git "https://github.com/lanru2001/my-intro-website-.git"
+              }  
+        }
+
+      stage("Maven Build") {
+        steps { 
+                echo "mvn clean package"
+                sh  "mv target/*.war target/webapp.war" 
+
+               } 
+        }
+    
+      stage ("Unit-Test") {
+        steps {
+                echo "Running Junit tests";
+                
+               } 
+        }
+      
+      
+      stage('SonarQube analysis') {
+        steps {
+            withSonarQubeEnv('SonarQube') {
+               sh "./gradlew sonarqube"
+               }
+            }
+      }
+      
+      stage("Quality gate") {
+          steps {
+             waitForQualityGate abortPipeline: true
+          }
+      }      
+      
+      stage("deploy-dev") {
+
+        steps {
+           sshagent(['user-name']) {
+             sh """
+                  scp -o StrictHostKeyChecking=no  webapp/target/webapp.war     ec2-user@3.135.28.9:/opt/tomcat/webapps/
+                  ssh ec2-user@3.135.28.9   /opt/tomcat/bin/shutdown.sh
+                  ssh ec2-user@3.135.28.9   /opt/tomcat/bin/startup.sh 
+                """                  
+           }
+      }  
+    }    
+    
+  
