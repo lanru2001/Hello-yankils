@@ -1,3 +1,5 @@
+currentBuild.displayName = "my-web-application-#" + currentBuild.number 
+
 pipeline{
     agent any
     environment {
